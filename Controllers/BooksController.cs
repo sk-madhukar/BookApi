@@ -26,8 +26,6 @@ namespace BookApi.Controllers
 
          Data (e.g., a list of books)
          Or an error/status (e.g., 404 Not Found)
-
-        
          ***/
         [HttpGet]
         public ActionResult<IEnumerable<Book>> GetAll() => Ok(_bookService.GetAll());
@@ -153,7 +151,5 @@ namespace BookApi.Controllers
             return NoContent();
         }
         #endregion
-
-
     }
 }
