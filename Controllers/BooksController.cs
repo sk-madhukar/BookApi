@@ -1,7 +1,10 @@
-﻿using BookApi.Models;
+﻿using BookApi.Data;
+using BookApi.Models;
 using BookApi.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 
 namespace BookApi.Controllers
@@ -10,10 +13,16 @@ namespace BookApi.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
-        private readonly BookService _bookService;
-        public BooksController(BookService bookService)
+        private readonly AppDbContext _appDbContext; //Why do we not intiated Book Services?
+        //private readonly BookService _bookService;
+        //public BooksController(BookService bookService)
+        //{
+        //    _bookService = bookService;
+        //}
+
+        public BooksController(AppDbContext appDbContext)
         {
-            _bookService = bookService;
+            _appDbContext = appDbContext;
         }
 
         #region [GetAll - Fetching all books at available]
@@ -28,22 +37,33 @@ namespace BookApi.Controllers
          Or an error/status (e.g., 404 Not Found)
          ***/
         [HttpGet]
-        public ActionResult<IEnumerable<Book>> GetAll() => Ok(_bookService.GetAll());
+        //public ActionResult<IEnumerable<Book>> GetAll() => Ok(_bookService.GetAll());
+
+        public async Task<ActionResult<IEnumerable<Book>>> GetALL() //Why do we use Task here? Why IEnumerable used here?
+        {
+            return await _appDbContext.Books.ToListAsync();
+        }
         #endregion
 
         #region [Fetch by Id]
         [HttpGet("{id}")]
-        public ActionResult<Book> GetById(int id)
+        //public ActionResult<Book> GetById(int id)
+        //{
+        //    var book = _bookService.GetById(id);
+
+        //    if (book == null)
+        //    {
+        //        return NotFound();
+        //    }
+
+        //    return Ok(book);
+        //}
+        public async Task<ActionResult<Book>> GetById(int id)
         {
-            var book = _bookService.GetById(id);
-
-            if (book == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(book);
+            var book = await _appDbContext.Books.FindAsync(id);
+            return  book is not null ? Ok(book) : NotFound();
         }
+
         #endregion
 
         #region [Add a new book]
@@ -68,9 +88,15 @@ namespace BookApi.Controllers
          ***/
 
         [HttpPost]
-        public ActionResult<Book> AddBook(Book book)
+        //public ActionResult<Book> AddBook(Book book)
+        //{
+        //    _bookService.Add(book);
+        //    return CreatedAtAction(nameof(GetById), new { id = book.Id }, book);
+        //}
+        public async Task<IActionResult> AddBook(Book book)
         {
-            _bookService.Add(book);
+            _appDbContext.Books.Add(book);
+            await _appDbContext.SaveChangesAsync(); //Why this? Do we not need to write any function for saving the changes in Database?
             return CreatedAtAction(nameof(GetById), new { id = book.Id }, book);
         }
         #endregion
@@ -99,16 +125,28 @@ namespace BookApi.Controllers
                 ii. No data is returned in the response body.
          ***/
         [HttpPut("{id}")]
-        public ActionResult<Book> Update(int Id, Book book)
+        //public ActionResult<Book> Update(int Id, Book book)
+        //{
+        //    var existing = _bookService.GetById(Id);
+        //    if (existing is null)
+        //    {
+        //        return NotFound();
+        //    }
+        //    _bookService.Update(Id, book);
+        //    return NoContent();
+        //}
+
+        public async Task<IActionResult> Update(int id, Book book)
         {
-            var existing = _bookService.GetById(Id);
-            if (existing is null)
+            if(id != book.Id)
             {
-                return NotFound();
+                return BadRequest();
             }
-            _bookService.Update(Id, book);
+            _appDbContext.Entry(book).State = EntityState.Modified;
+            await _appDbContext.SaveChangesAsync();
             return NoContent();
         }
+
         /***
          Why Use NoContent()?
          It's a standard RESTful response for successful PUT operations.
@@ -139,15 +177,26 @@ namespace BookApi.Controllers
         It tells the client: "Deletion succeeded, and there's nothing more to send back."
         ***/
         [HttpDelete("{id}")]
-        public ActionResult Delete(int Id) 
-        { 
-            var exist = _bookService.GetById(Id);
-            if(exist is null)
+        //public ActionResult Delete(int Id) 
+        //{ 
+        //    var exist = _bookService.GetById(Id);
+        //    if(exist is null)
+        //    {
+        //        return NotFound();
+        //    }
+
+        //    _bookService.Delete(Id);
+        //    return NoContent();
+        //}
+        public async Task<IActionResult> Delete(int id)
+        {
+            var book = await _appDbContext.Books.FindAsync(id);
+            if(book is null)
             {
                 return NotFound();
             }
-
-            _bookService.Delete(Id);
+            _appDbContext.Books.Remove(book);
+            await _appDbContext.SaveChangesAsync();
             return NoContent();
         }
         #endregion
