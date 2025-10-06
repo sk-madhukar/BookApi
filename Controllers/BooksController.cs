@@ -1,6 +1,7 @@
-﻿using BookApi.Data;
+﻿    using BookApi.Data;
 using BookApi.Models;
 using BookApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -36,7 +37,7 @@ namespace BookApi.Controllers
          Data (e.g., a list of books)
          Or an error/status (e.g., 404 Not Found)
          ***/
-        [HttpGet]
+        [HttpGet, AllowAnonymous] //Everyone (User/Admin) can view
         //public ActionResult<IEnumerable<Book>> GetAll() => Ok(_bookService.GetAll());
 
         public async Task<ActionResult<IEnumerable<Book>>> GetALL() //Why do we use Task here? Why IEnumerable used here?
@@ -47,6 +48,7 @@ namespace BookApi.Controllers
 
         #region [Fetch by Id]
         [HttpGet("{id}")]
+        [AllowAnonymous]
         //public ActionResult<Book> GetById(int id)
         //{
         //    var book = _bookService.GetById(id);
@@ -87,6 +89,7 @@ namespace BookApi.Controllers
             4. book is the actual object returned in the response.
          ***/
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         //public ActionResult<Book> AddBook(Book book)
         //{
@@ -124,6 +127,7 @@ namespace BookApi.Controllers
                 i. The update was successful.
                 ii. No data is returned in the response body.
          ***/
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         //public ActionResult<Book> Update(int Id, Book book)
         //{
@@ -176,6 +180,7 @@ namespace BookApi.Controllers
         It's a standard RESTful response for successful DELETE operations.
         It tells the client: "Deletion succeeded, and there's nothing more to send back."
         ***/
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         //public ActionResult Delete(int Id) 
         //{ 
